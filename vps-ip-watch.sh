@@ -67,13 +67,14 @@ chmod +x "$MANAGER_FILE"
 send_tg() {
   local text="$1"
 
-  while [ \${#text} -gt 0 ]; do
-    local chunk="\${text:0:3500}"
-    text="\${text:3500}"
+  while [ ${#text} -gt 0 ]; do
+    local chunk="${text:0:3500}"
+    text="${text:3500}"
 
-    curl -sS -X POST "https://api.telegram.org/bot\${TG_BOT_TOKEN}/sendMessage" \
-      -d "chat_id=\${TG_CHAT_ID}" \
-      --data-urlencode "text=\${chunk}" >/dev/null
+    curl -sS -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
+      -d "chat_id=${TG_CHAT_ID}" \
+      --data-urlencode "text=${chunk}" \
+      -d "disable_web_page_preview=true" >/dev/null
   done
 }
 
