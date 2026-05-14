@@ -251,7 +251,14 @@ if [ "${1:-}" != "" ]; then
 fi
 
 # 获取当前IPv4
-CURRENT_IP="$(curl -4 -sS --max-time 15 https://api.ipify.org || true)"
+CURRENT_IP="$(
+(
+curl -4 -sS --max-time 10 https://api.ipify.org ||
+curl -4 -sS --max-time 10 https://ipv4.icanhazip.com ||
+curl -4 -sS --max-time 10 https://ifconfig.me/ip ||
+curl -4 -sS --max-time 10 https://checkip.amazonaws.com
+) | head -n1 | tr -d '\r\n'
+)"
 
 if [ -z "$CURRENT_IP" ]; then
 
