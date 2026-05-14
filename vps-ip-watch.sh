@@ -282,28 +282,31 @@ VPS：${VPS_NAME}
 
   # ===================== IP质量检测 =====================
 
-  rm -f "$REPORT_FILE"
+rm -f "$REPORT_FILE" "$REPORT_FILE.tmp" "$REPORT_FILE.all"
 
-  bash <(curl -sL https://IP.Check.Place) -4 -s -o "$REPORT_FILE" > "$REPORT_FILE.tmp" 2>&1 || true
+curl -sL https://IP.Check.Place | bash -s -- -4 -o "$REPORT_FILE" > "$REPORT_FILE.tmp" 2>&1 || true
 
-  cat "$REPORT_FILE.tmp" >> "$REPORT_FILE" 2>/dev/null || true
+cat "$REPORT_FILE" "$REPORT_FILE.tmp" 2>/dev/null > "$REPORT_FILE.all"
 
-  REPORT_LINK="$(grep -oE 'https://Report\.Check\.Place/ip/[A-Za-z0-9]+\.svg' "$REPORT_FILE" | tail -n1 || true)"
+REPORT_LINK="$(grep -aoE 'https?://Report\.Check\.Place/ip/[A-Za-z0-9]+\.svg' "$REPORT_FILE.all" | tail -n1 || true)"
 
-  if [ -n "$REPORT_LINK" ]; then
+if [ -n "$REPORT_LINK" ]; then
 
-    send_tg "📊 ${VPS_NAME} IPv4质量检测报告：
+  send_tg "📊 ${VPS_NAME} IPv4质量检测报告：
 
 ${REPORT_LINK}"
 
-    send_tg "✅ ${VPS_NAME} 本次IP检测任务已完成"
+  send_tg "✅ ${VPS_NAME} 本次IP检测任务已完成"
 
-  else
+else
 
-    send_tg "⚠️ ${VPS_NAME} IPv4质量检测完成，但没有提取到报告链接"
+  send_tg "⚠️ ${VPS_NAME} IPv4质量检测完成，但没有提取到报告链接
 
-  fi
+请查看：
+${REPORT_FILE}.all"
 
-  rm -f "$REPORT_FILE.tmp"
+fi
+
+rm -f "$REPORT_FILE.tmp"
 
 fi
