@@ -76,13 +76,18 @@ setup_cron() {
 send_tg() {
   local text="$1"
   local i=0
+
   while [ $i -lt 3 ]; do
+
     curl -sS -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
       -d "chat_id=${TG_CHAT_ID}" \
       --data-urlencode "text=${text}" \
-      -d "disable_web_page_preview=true" && break
+      -d "disable_web_page_preview=true" \
+      >/dev/null 2>&1 && break
+
     i=$((i+1))
     sleep 3
+
   done
 }
 
