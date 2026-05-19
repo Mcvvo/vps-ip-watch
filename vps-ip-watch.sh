@@ -256,6 +256,27 @@ fi
 if [ "${1:-}" != "" ]; then
   setup_cron "$1"
   install_manager "$1"
+
+  CURRENT_IP="$(
+  (
+    curl -4 -sS --max-time 10 https://api.ipify.org ||
+    curl -4 -sS --max-time 10 https://ipv4.icanhazip.com ||
+    curl -4 -sS --max-time 10 https://ifconfig.me/ip ||
+    curl -4 -sS --max-time 10 https://checkip.amazonaws.com
+  ) | head -n1 | tr -d '\r\n'
+  )"
+
+  [ -z "$CURRENT_IP" ] && CURRENT_IP="获取失败"
+
+  send_tg "✅ ${VPS_NAME} 连接成功
+
+当前IPv4：${CURRENT_IP}
+
+正在执行首次IPv4质量检测..."
+
+  rm -f /var/lib/vps-ip-watch/last_ipv4.txt
+
+  # 不退出，继续往下执行一次 IP 检测
 fi
 
 # 获取当前IPv4
