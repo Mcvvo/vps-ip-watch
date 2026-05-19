@@ -180,12 +180,10 @@ show_menu() {
         ;;
 
       5)
-
-        curl -sL "$SCRIPT_URL" | bash
-
-        read -rp "按回车继续..."
-
-        ;;
+      rm -f "$STATE_FILE"
+      curl -sL "$SCRIPT_URL" | bash
+      read -rp "按回车继续..." < /dev/tty
+  ;;
 
       6)
 
