@@ -40,10 +40,10 @@ first_setup() {
   echo "=============================="
   echo
 
-  read -rp "请输入 VPS 名称: " VPS_NAME
-  read -rp "请输入 Telegram Bot Token: " TG_BOT_TOKEN
-  read -rp "请输入 Telegram Chat ID: " TG_CHAT_ID
-  read -rp "请输入检测间隔分钟数(例如30): " CHECK_INTERVAL
+ read -rp "请输入 VPS 名称: " VPS_NAME </dev/tty
+ read -rp "请输入 Telegram Bot Token: " TG_BOT_TOKEN </dev/tty
+ read -rp "请输入 Telegram Chat ID: " TG_CHAT_ID </dev/tty
+ read -rp "请输入检测间隔分钟数(例如30): " CHECK_INTERVAL </dev/tty
 
   if ! [[ "$CHECK_INTERVAL" =~ ^[0-9]+$ ]]; then
     echo "检测间隔必须是数字"
