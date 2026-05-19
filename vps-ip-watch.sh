@@ -32,22 +32,30 @@ load_config() {
 
 # ===================== 首次配置 =====================
 first_setup() {
-
   clear
-
   echo "=============================="
   echo " VPS IPv4监控首次配置"
   echo "=============================="
   echo
 
- read -rp "请输入 VPS 名称: " VPS_NAME </dev/tty
- read -rp "请输入 Telegram Bot Token: " TG_BOT_TOKEN </dev/tty
- read -rp "请输入 Telegram Chat ID: " TG_CHAT_ID </dev/tty
- read -rp "请输入检测间隔分钟数(例如30): " CHECK_INTERVAL </dev/tty
+  if [ -r /dev/tty ]; then
+    read -rp "请输入 VPS 名称: " VPS_NAME < /dev/tty || VPS_NAME=""
+    read -rp "请输入 Telegram Bot Token: " TG_BOT_TOKEN < /dev/tty || TG_BOT_TOKEN=""
+    read -rp "请输入 Telegram Chat ID: " TG_CHAT_ID < /dev/tty || TG_CHAT_ID=""
+    read -rp "请输入检测间隔分钟数(例如30): " CHECK_INTERVAL < /dev/tty || CHECK_INTERVAL=""
+  else
+    VPS_NAME=""
+    TG_BOT_TOKEN=""
+    TG_CHAT_ID=""
+    CHECK_INTERVAL=""
+  fi
+
+  [ -z "${VPS_NAME:-}" ] && VPS_NAME="未命名VPS"
+  [ -z "${CHECK_INTERVAL:-}" ] && CHECK_INTERVAL="30"
 
   if ! [[ "$CHECK_INTERVAL" =~ ^[0-9]+$ ]]; then
-    echo "检测间隔必须是数字"
-    exit 1
+    echo "检测间隔输入无效，已自动改为 30 分钟"
+    CHECK_INTERVAL="30"
   fi
 
   save_config
