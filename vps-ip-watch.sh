@@ -136,7 +136,11 @@ show_menu() {
     echo "0. 退出"
     echo
 
-    read -rp "请输入数字: " CHOICE
+    CHOICE=""
+while [ -z "$CHOICE" ]; do
+  printf "请输入数字: "
+  IFS= read -r CHOICE < /dev/tty
+done
 
     case "$CHOICE" in
 
@@ -175,14 +179,16 @@ show_menu() {
         echo "检测间隔: ${CHECK_INTERVAL}分钟"
         echo
 
-        read -rp "按回车继续..."
+        printf "按回车继续..."
+        IFS= read -r _ < /dev/tty
 
         ;;
 
       5)
       rm -f "$STATE_FILE"
       curl -sL "$SCRIPT_URL" | bash
-      read -rp "按回车继续..." < /dev/tty
+      printf "按回车继续..."
+      IFS= read -r _ < /dev/tty
   ;;
 
       6)
