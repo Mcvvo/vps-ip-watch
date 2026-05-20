@@ -73,7 +73,6 @@ uninstall_all() {
 }
 
 first_setup() {
-
   clear
 
   echo "=============================="
@@ -81,25 +80,31 @@ first_setup() {
   echo "=============================="
   echo
 
-  printf "请输入 VPS 名称: "
-  read -r VPS_NAME
+  if [ -r /dev/tty ]; then
+    printf "请输入 VPS 名称: " > /dev/tty
+    IFS= read -r VPS_NAME < /dev/tty
 
-  printf "请输入 Telegram Bot Token: "
-  read -r TG_BOT_TOKEN
+    printf "请输入 Telegram Bot Token: " > /dev/tty
+    IFS= read -r TG_BOT_TOKEN < /dev/tty
 
-  printf "请输入 Telegram Chat ID: "
-  read -r TG_CHAT_ID
+    printf "请输入 Telegram Chat ID: " > /dev/tty
+    IFS= read -r TG_CHAT_ID < /dev/tty
 
-  printf "请输入检测间隔分钟数(例如30): "
-  read -r CHECK_INTERVAL
+    printf "请输入检测间隔分钟数(例如30): " > /dev/tty
+    IFS= read -r CHECK_INTERVAL < /dev/tty
+  else
+    echo "错误：当前环境没有可交互终端 /dev/tty"
+    exit 1
+  fi
 
   [ -z "${VPS_NAME:-}" ] && VPS_NAME="未命名VPS"
-
   [ -z "${CHECK_INTERVAL:-}" ] && CHECK_INTERVAL="30"
 
-  if ! [[ "$CHECK_INTERVAL" =~ ^[0-9]+$ ]]; then
-    CHECK_INTERVAL="30"
-  fi
+  case "$CHECK_INTERVAL" in
+    ''|*[!0-9]*)
+      CHECK_INTERVAL="30"
+      ;;
+  esac
 
   save_config
 
