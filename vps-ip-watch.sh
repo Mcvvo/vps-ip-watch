@@ -4,10 +4,33 @@ set -euo pipefail
 BASE_DIR="/var/lib/vps-ip-watch"
 APP_FILE="${BASE_DIR}/vps-ip-watch"
 MENU_FILE="${BASE_DIR}/ipip"
+SYMLINK="/usr/local/bin/ipip"
+CRON_MARK="# vps-ip-watch-auto"
+
+mkdir -p "$BASE_DIR"
+chmod 700 "$BASE_DIR"
+
+if [ "${1:-}" = "--uninstall" ]; then
+  pkill -f vps-ip-watch 2>/dev/null || true
+  crontab -l 2>/dev/null | grep -v "$CRON_MARK" | crontab - 2>/dev/null || true
+  rm -f "$SYMLINK"
+  rm -rf "$BASE_DIR"
+  hash -r 2>/dev/null || true
+  echo "卸载完成"
+  exit 0
+fi
+
+cat > "$APP_FILE" <<'APP_EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+BASE_DIR="/var/lib/vps-ip-watch"
 CONFIG_FILE="${BASE_DIR}/config.conf"
 STATE_FILE="${BASE_DIR}/last_ipv4.txt"
 REPORT_FILE="${BASE_DIR}/ip_quality_report.txt"
 LOG_FILE="${BASE_DIR}/vps-ip-watch.log"
+APP_FILE="${BASE_DIR}/vps-ip-watch"
+MENU_FILE="${BASE_DIR}/ipip"
 SYMLINK="/usr/local/bin/ipip"
 CRON_MARK="# vps-ip-watch-auto"
 
@@ -59,8 +82,7 @@ uninstall_all() {
   echo
   echo "正在彻底卸载 VPS IP 监控..."
 
-  pkill -f "$APP_FILE" 2>/dev/null || true
-
+  pkill -f vps-ip-watch 2>/dev/null || true
   crontab -l 2>/dev/null | grep -v "$CRON_MARK" | crontab - 2>/dev/null || true
 
   rm -f "$SYMLINK"
@@ -68,7 +90,7 @@ uninstall_all() {
 
   hash -r 2>/dev/null || true
 
-  echo "卸载完成，已清理：$BASE_DIR 和 $SYMLINK"
+  echo "卸载完成"
   echo
 }
 
@@ -110,27 +132,12 @@ first_setup() {
 
   echo
   echo "配置已保存"
-  echo
-}
-
-install_self() {
-  cp "$0" "$APP_FILE"
-  chmod +x "$APP_FILE"
-
-cat > "$MENU_FILE" <<EOF
-#!/usr/bin/env bash
-exec "$APP_FILE" "\$@"
-EOF
-
-  chmod +x "$MENU_FILE"
-
-  ln -sf "$MENU_FILE" "$SYMLINK"
 }
 
 setup_cron() {
   crontab -l 2>/dev/null | grep -v "$CRON_MARK" > /tmp/ipipcron || true
 
-  echo "*/${CHECK_INTERVAL} * * * * ${APP_FILE} >> ${LOG_FILE} 2>&1 ${CRON_MARK}" >> /tmp/ipipcron
+  echo "*/${CHECK_INTERVAL} * * * * ${APP_FILE} --check >> ${LOG_FILE} 2>&1 ${CRON_MARK}" >> /tmp/ipipcron
 
   crontab /tmp/ipipcron
   rm -f /tmp/ipipcron
@@ -142,7 +149,7 @@ setup_cron() {
 pause_wait() {
   echo
   printf "按回车继续..."
-  read -r _
+  IFS= read -r _ < /dev/tty || true
 }
 
 show_menu() {
@@ -165,30 +172,40 @@ show_menu() {
     echo "0. 退出"
     echo
 
-    printf "请输入数字: "
-    read -r CHOICE
+    printf "请输入数字: " > /dev/tty
+    IFS= read -r CHOICE < /dev/tty
 
     case "$CHOICE" in
       1)
-        read -rp "新的 VPS 名称: " VPS_NAME
+        printf "新的 VPS 名称: " > /dev/tty
+        IFS= read -r VPS_NAME < /dev/tty
         save_config
         echo "已保存"
         pause_wait
         ;;
 
       2)
-        read -rp "新的 TG Bot Token: " TG_BOT_TOKEN
-        read -rp "新的 TG Chat ID: " TG_CHAT_ID
+        printf "新的 TG Bot Token: " > /dev/tty
+        IFS= read -r TG_BOT_TOKEN < /dev/tty
+
+        printf "新的 TG Chat ID: " > /dev/tty
+        IFS= read -r TG_CHAT_ID < /dev/tty
+
         save_config
         echo "已保存"
         pause_wait
         ;;
 
       3)
-        read -rp "新的检测间隔分钟数: " CHECK_INTERVAL
-        if ! [[ "$CHECK_INTERVAL" =~ ^[0-9]+$ ]]; then
-          CHECK_INTERVAL="30"
-        fi
+        printf "新的检测间隔分钟数: " > /dev/tty
+        IFS= read -r CHECK_INTERVAL < /dev/tty
+
+        case "$CHECK_INTERVAL" in
+          ''|*[!0-9]*)
+            CHECK_INTERVAL="30"
+            ;;
+        esac
+
         save_config
         setup_cron
         echo "已更新定时任务"
@@ -206,7 +223,7 @@ show_menu() {
 
       5)
         rm -f "$STATE_FILE"
-        "$APP_FILE"
+        "$APP_FILE" --check
         pause_wait
         ;;
 
@@ -234,7 +251,8 @@ show_menu() {
         echo "========================="
         echo
 
-        read -rp "确认卸载？(y/n): " CONFIRM
+        printf "确认卸载？(y/n): " > /dev/tty
+        IFS= read -r CONFIRM < /dev/tty
 
         if [[ "$CONFIRM" == "y" || "$CONFIRM" == "Y" ]]; then
           uninstall_all
@@ -312,10 +330,21 @@ case "${1:-}" in
     exit 0
     ;;
 
-  --menu|"")
+  --menu)
     if [ ! -f "$CONFIG_FILE" ]; then
       first_setup
-      install_self
+      setup_cron
+    fi
+    show_menu
+    ;;
+
+  --check)
+    run_check
+    ;;
+
+  *)
+    if [ ! -f "$CONFIG_FILE" ]; then
+      first_setup
       setup_cron
 
       CURRENT_IP="$(get_ipv4)"
@@ -330,16 +359,20 @@ case "${1:-}" in
       rm -f "$STATE_FILE"
       run_check
     else
-      install_self
       show_menu
     fi
     ;;
-
-  --check)
-    run_check
-    ;;
-
-  *)
-    run_check
-    ;;
 esac
+APP_EOF
+
+chmod +x "$APP_FILE"
+
+cat > "$MENU_FILE" <<EOF
+#!/usr/bin/env bash
+exec "$APP_FILE" "\$@"
+EOF
+
+chmod +x "$MENU_FILE"
+ln -sf "$MENU_FILE" "$SYMLINK"
+
+"$APP_FILE" "$@"
