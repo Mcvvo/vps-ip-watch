@@ -73,18 +73,28 @@ uninstall_all() {
 }
 
 first_setup() {
+
   clear
+
   echo "=============================="
   echo " VPS IPv4监控首次配置"
   echo "=============================="
   echo
 
-  read -rp "请输入 VPS 名称: " VPS_NAME
-  read -rp "请输入 Telegram Bot Token: " TG_BOT_TOKEN
-  read -rp "请输入 Telegram Chat ID: " TG_CHAT_ID
-  read -rp "请输入检测间隔分钟数(例如30): " CHECK_INTERVAL
+  printf "请输入 VPS 名称: "
+  read -r VPS_NAME
+
+  printf "请输入 Telegram Bot Token: "
+  read -r TG_BOT_TOKEN
+
+  printf "请输入 Telegram Chat ID: "
+  read -r TG_CHAT_ID
+
+  printf "请输入检测间隔分钟数(例如30): "
+  read -r CHECK_INTERVAL
 
   [ -z "${VPS_NAME:-}" ] && VPS_NAME="未命名VPS"
+
   [ -z "${CHECK_INTERVAL:-}" ] && CHECK_INTERVAL="30"
 
   if ! [[ "$CHECK_INTERVAL" =~ ^[0-9]+$ ]]; then
@@ -95,6 +105,7 @@ first_setup() {
 
   echo
   echo "配置已保存"
+  echo
 }
 
 install_self() {
